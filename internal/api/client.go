@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -48,7 +49,7 @@ func NewClient(token, baseURL string) *Client {
 	}
 }
 
-func (c *Client) do(method, path string, body interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -59,7 +60,7 @@ func (c *Client) do(method, path string, body interface{}) (*http.Response, erro
 	}
 
 	url := c.baseURL + "/v1" + path
-	req, err := http.NewRequest(method, url, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
@@ -84,8 +85,8 @@ func (c *Client) do(method, path string, body interface{}) (*http.Response, erro
 	return resp, nil
 }
 
-func (c *Client) Get(path string, result interface{}) error {
-	resp, err := c.do(http.MethodGet, path, nil)
+func (c *Client) Get(ctx context.Context, path string, result interface{}) error {
+	resp, err := c.do(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return err
 	}
@@ -93,8 +94,8 @@ func (c *Client) Get(path string, result interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) Post(path string, body, result interface{}) error {
-	resp, err := c.do(http.MethodPost, path, body)
+func (c *Client) Post(ctx context.Context, path string, body, result interface{}) error {
+	resp, err := c.do(ctx, http.MethodPost, path, body)
 	if err != nil {
 		return err
 	}
@@ -102,8 +103,8 @@ func (c *Client) Post(path string, body, result interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) Put(path string, body, result interface{}) error {
-	resp, err := c.do(http.MethodPut, path, body)
+func (c *Client) Put(ctx context.Context, path string, body, result interface{}) error {
+	resp, err := c.do(ctx, http.MethodPut, path, body)
 	if err != nil {
 		return err
 	}
@@ -111,8 +112,8 @@ func (c *Client) Put(path string, body, result interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) Delete(path string) error {
-	resp, err := c.do(http.MethodDelete, path, nil)
+func (c *Client) Delete(ctx context.Context, path string) error {
+	resp, err := c.do(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return err
 	}

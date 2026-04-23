@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestClientGet(t *testing.T) {
@@ -25,7 +27,7 @@ func TestClientGet(t *testing.T) {
 
 	client := NewClient("test-token", server.URL)
 	var result map[string]string
-	err := client.Get("/pages", &result)
+	err := client.Get(context.Background(), "/pages", &result)
 	if err != nil {
 		t.Fatalf("Get failed: %v", err)
 	}
@@ -56,7 +58,7 @@ func TestClientPost(t *testing.T) {
 	client := NewClient("test-token", server.URL)
 	reqBody := map[string]string{"name": "Test Page"}
 	var result map[string]string
-	err := client.Post("/pages", reqBody, &result)
+	err := client.Post(context.Background(), "/pages", reqBody, &result)
 	if err != nil {
 		t.Fatalf("Post failed: %v", err)
 	}
@@ -74,7 +76,7 @@ func TestClientError401(t *testing.T) {
 
 	client := NewClient("bad-token", server.URL)
 	var result map[string]string
-	err := client.Get("/pages", &result)
+	err := client.Get(context.Background(), "/pages", &result)
 	if err == nil {
 		t.Fatal("expected error for 401, got nil")
 	}
@@ -96,7 +98,7 @@ func TestClientError404(t *testing.T) {
 
 	client := NewClient("test-token", server.URL)
 	var result map[string]string
-	err := client.Get("/pages/nonexistent", &result)
+	err := client.Get(context.Background(), "/pages/nonexistent", &result)
 	if err == nil {
 		t.Fatal("expected error for 404, got nil")
 	}
@@ -119,7 +121,7 @@ func TestClientDelete(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient("test-token", server.URL)
-	err := client.Delete("/pages/pg_123")
+	err := client.Delete(context.Background(), "/pages/pg_123")
 	if err != nil {
 		t.Fatalf("Delete failed: %v", err)
 	}
@@ -138,11 +140,30 @@ func TestClientPut(t *testing.T) {
 	client := NewClient("test-token", server.URL)
 	reqBody := map[string]string{"name": "Updated"}
 	var result map[string]string
-	err := client.Put("/pages/pg_123", reqBody, &result)
+	err := client.Put(context.Background(), "/pages/pg_123", reqBody, &result)
 	if err != nil {
 		t.Fatalf("Put failed: %v", err)
 	}
 	if result["name"] != "Updated" {
 		t.Errorf("name = %q, want %q", result["name"], "Updated")
+	}
+}
+
+func TestClientTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"id": "pg_123"})
+	}))
+	defer server.Close()
+
+	client := NewClient("test-token", server.URL)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
+	var result map[string]string
+	err := client.Get(ctx, "/pages", &result)
+	if err == nil {
+		t.Fatal("expected timeout error, got nil")
 	}
 }
