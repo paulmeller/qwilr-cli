@@ -11,9 +11,11 @@ import (
 var jsonOutput bool
 
 var rootCmd = &cobra.Command{
-	Use:   "qwilr",
-	Short: "CLI for the Qwilr API",
-	Long:  "Manage Qwilr pages, templates, blocks, and webhooks from the command line.",
+	Use:           "qwilr",
+	Short:         "CLI for the Qwilr API",
+	Long:          "Manage Qwilr pages, templates, blocks, and webhooks from the command line.",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 func Execute() {
