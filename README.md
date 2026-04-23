@@ -16,6 +16,43 @@ cd qwilr-cli
 go build -o qwilr .
 ```
 
+## Using with Claude Code
+
+Install the CLI, then add it as an MCP tool so Claude can manage your Qwilr pages directly:
+
+```bash
+# Install
+go install github.com/paulmeller/qwilr-cli@latest
+
+# Set your API token
+export QWILR_API_TOKEN=your_token_here
+
+# Add as a Claude Code slash command by putting this in your project's CLAUDE.md:
+```
+
+```markdown
+## Tools
+
+You have access to the `qwilr` CLI for managing Qwilr pages. Run it via bash:
+
+- `qwilr pages list --json` — list all pages
+- `qwilr pages create --from page.yaml` — create a page from a YAML spec
+- `qwilr pages get <id> --json` — get page details
+- `qwilr templates list --json` — list available templates
+- `qwilr webhooks create --url <url> --event pageAccepted` — subscribe to events
+
+Always use `--json` for structured output you can parse.
+```
+
+Or configure it as a [custom slash command](https://docs.anthropic.com/en/docs/claude-code/slash-commands) by creating `.claude/commands/qwilr.md`:
+
+```markdown
+List my Qwilr pages and templates, then ask what I'd like to do.
+Use the `qwilr` CLI with `--json` for all commands.
+```
+
+Then use it in a session with `/project:qwilr`.
+
 ## Setup
 
 Configure your API token (requires a Qwilr Enterprise account):
