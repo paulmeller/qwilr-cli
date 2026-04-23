@@ -24,9 +24,20 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		if isValidationError(err) {
+			os.Exit(2)
+		}
 		os.Exit(1)
 	}
+}
+
+func isValidationError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "is required") ||
+		strings.Contains(msg, "cannot be empty") ||
+		strings.Contains(msg, "invalid") ||
+		strings.Contains(msg, "no API token configured")
 }
 
 func init() {
