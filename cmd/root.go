@@ -1,14 +1,18 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var jsonOutput bool
+var timeout time.Duration
 
 var rootCmd = &cobra.Command{
 	Use:           "qwilr",
@@ -28,12 +32,18 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output in JSON format")
+	rootCmd.PersistentFlags().DurationVar(&timeout, "timeout", 30*time.Second, "API request timeout")
+}
+
+func cmdContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), timeout)
 }
 
 func initConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME/.config/qwilr")
+	home := os.Getenv("HOME")
+	viper.AddConfigPath(strings.Join([]string{home, ".config", "qwilr"}, "/"))
 	viper.SetEnvPrefix("QWILR")
 	viper.AutomaticEnv()
 	_ = viper.ReadInConfig()

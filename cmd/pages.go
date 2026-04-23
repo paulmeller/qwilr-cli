@@ -22,13 +22,18 @@ var pagesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List pages",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 
 		path := fmt.Sprintf("/pages?limit=%d&offset=%d", limit, offset)
 		var result []map[string]interface{}
-		if err := client.Get(path, &result); err != nil {
+		if err := client.Get(ctx, path, &result); err != nil {
 			return err
 		}
 
@@ -56,9 +61,14 @@ var pagesGetCmd = &cobra.Command{
 	Short: "Get page details",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 		var result map[string]interface{}
-		if err := client.Get("/pages/"+args[0], &result); err != nil {
+		if err := client.Get(ctx, "/pages/"+args[0], &result); err != nil {
 			return err
 		}
 
@@ -89,7 +99,12 @@ var pagesCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new page",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 
 		var req pageCreateRequest
 
@@ -117,7 +132,7 @@ var pagesCreateCmd = &cobra.Command{
 		}
 
 		var result map[string]interface{}
-		if err := client.Post("/pages", req, &result); err != nil {
+		if err := client.Post(ctx, "/pages", req, &result); err != nil {
 			return err
 		}
 
@@ -141,7 +156,12 @@ var pagesUpdateCmd = &cobra.Command{
 	Short: "Update a page",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 
 		body := make(map[string]interface{})
 		if name, _ := cmd.Flags().GetString("name"); name != "" {
@@ -152,7 +172,7 @@ var pagesUpdateCmd = &cobra.Command{
 		}
 
 		var result map[string]interface{}
-		if err := client.Put("/pages/"+args[0], body, &result); err != nil {
+		if err := client.Put(ctx, "/pages/"+args[0], body, &result); err != nil {
 			return err
 		}
 
@@ -170,8 +190,13 @@ var pagesDeleteCmd = &cobra.Command{
 	Short: "Delete a page",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
-		if err := client.Delete("/pages/" + args[0]); err != nil {
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
+		if err := client.Delete(ctx, "/pages/"+args[0]); err != nil {
 			return err
 		}
 		if !jsonOutput {
@@ -186,7 +211,12 @@ var pagesVariablesCmd = &cobra.Command{
 	Short: "Set token/substitution values on a page",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 
 		vars := make(map[string]string)
 
@@ -211,7 +241,7 @@ var pagesVariablesCmd = &cobra.Command{
 		}
 
 		var result map[string]interface{}
-		if err := client.Put("/pages/"+args[0]+"/variables", vars, &result); err != nil {
+		if err := client.Put(ctx, "/pages/"+args[0]+"/variables", vars, &result); err != nil {
 			return err
 		}
 
@@ -249,13 +279,12 @@ func init() {
 	pagesCmd.AddCommand(pagesVariablesCmd)
 }
 
-func newClient() *api.Client {
+func newClient() (*api.Client, error) {
 	token := config.ResolveToken(config.DefaultPath())
 	if token == "" {
-		fmt.Fprintln(os.Stderr, "Error: no API token configured — run \"qwilr configure\" or set QWILR_API_TOKEN")
-		os.Exit(1)
+		return nil, fmt.Errorf("no API token configured — run \"qwilr configure\" or set QWILR_API_TOKEN")
 	}
-	return api.NewClient(token, "")
+	return api.NewClient(token, ""), nil
 }
 
 func stringVal(m map[string]interface{}, key string) string {
