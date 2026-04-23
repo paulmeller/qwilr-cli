@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"text/tabwriter"
 )
 
@@ -46,4 +47,9 @@ func PrintDetail(w io.Writer, fields []KeyValue) {
 		fmt.Fprintf(tw, "%s:\t%s\n", f.Key, f.Value)
 	}
 	tw.Flush()
+}
+
+func NoColor() bool {
+	_, ok := os.LookupEnv("NO_COLOR")
+	return ok
 }

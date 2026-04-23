@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -54,5 +55,19 @@ func TestPrintDetail(t *testing.T) {
 	}
 	if !strings.Contains(out, "pg_123") {
 		t.Errorf("output missing 'pg_123': %s", out)
+	}
+}
+
+func TestNoColorDetection(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	if !NoColor() {
+		t.Error("NoColor() = false, want true when NO_COLOR is set")
+	}
+}
+
+func TestNoColorUnset(t *testing.T) {
+	os.Unsetenv("NO_COLOR")
+	if NoColor() {
+		t.Error("NoColor() = true, want false when NO_COLOR is unset")
 	}
 }
