@@ -16,9 +16,14 @@ var templatesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available templates",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 		var result []map[string]interface{}
-		if err := client.Get("/templates", &result); err != nil {
+		if err := client.Get(ctx, "/templates", &result); err != nil {
 			return err
 		}
 

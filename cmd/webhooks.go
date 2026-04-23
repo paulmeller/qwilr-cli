@@ -17,9 +17,14 @@ var webhooksListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List webhook subscriptions",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
 		var result []map[string]interface{}
-		if err := client.Get("/webhooks", &result); err != nil {
+		if err := client.Get(ctx, "/webhooks", &result); err != nil {
 			return err
 		}
 
@@ -45,8 +50,6 @@ var webhooksCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a webhook subscription",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
-
 		url, _ := cmd.Flags().GetString("url")
 		event, _ := cmd.Flags().GetString("event")
 
@@ -57,13 +60,20 @@ var webhooksCreateCmd = &cobra.Command{
 			return fmt.Errorf("--event is required")
 		}
 
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
+
 		body := map[string]string{
 			"url":   url,
 			"event": event,
 		}
 
 		var result map[string]interface{}
-		if err := client.Post("/webhooks", body, &result); err != nil {
+		if err := client.Post(ctx, "/webhooks", body, &result); err != nil {
 			return err
 		}
 
@@ -87,8 +97,13 @@ var webhooksDeleteCmd = &cobra.Command{
 	Short: "Delete a webhook subscription",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := newClient()
-		if err := client.Delete("/webhooks/" + args[0]); err != nil {
+		client, err := newClient()
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cmdContext()
+		defer cancel()
+		if err := client.Delete(ctx, "/webhooks/"+args[0]); err != nil {
 			return err
 		}
 		if !jsonOutput {
